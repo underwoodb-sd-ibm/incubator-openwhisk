@@ -110,6 +110,7 @@ type Flags struct {
         basepath   string
         apiname    string
         configfile string
+        sortAction bool
         resptype   string
     }
 }

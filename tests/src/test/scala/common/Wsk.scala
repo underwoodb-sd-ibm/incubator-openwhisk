@@ -825,6 +825,7 @@ class WskApiExperimental extends RunWskCmd {
         limit: Option[Int] = None,
         since: Option[Instant] = None,
         full: Option[Boolean] = None,
+        sortAction: Option[Boolean] = None,
         expectedExitCode: Int = SUCCESS_EXIT)(
             implicit wp: WskProps): RunResult = {
         val params = Seq(noun, "list", "--auth", wp.authKey) ++
@@ -833,7 +834,8 @@ class WskApiExperimental extends RunWskCmd {
             { operation map { o => Seq(o) } getOrElse Seq() } ++
             { limit map { l => Seq("--limit", l.toString) } getOrElse Seq() } ++
             { since map { i => Seq("--since", i.toEpochMilli.toString) } getOrElse Seq() } ++
-            { full map { r => Seq("--full") } getOrElse Seq() }
+            { full map { r => Seq("--full") } getOrElse Seq() } ++
+            { sortAction map { n => Seq("--sort-action") } getOrElse Seq() }
         cli(wp.overrides ++ params, expectedExitCode, showCmd = true)
     }
 
@@ -919,6 +921,7 @@ class WskApi()
         limit: Option[Int] = None,
         since: Option[Instant] = None,
         full: Option[Boolean] = None,
+        sortAction: Option[Boolean] = None,
         expectedExitCode: Int = SUCCESS_EXIT,
         cliCfgFile: Option[String] = None)(
             implicit wp: WskProps): RunResult = {
@@ -928,7 +931,8 @@ class WskApi()
             { operation map { o => Seq(o) } getOrElse Seq() } ++
             { limit map { l => Seq("--limit", l.toString) } getOrElse Seq() } ++
             { since map { i => Seq("--since", i.toEpochMilli.toString) } getOrElse Seq() } ++
-            { full map { r => Seq("--full") } getOrElse Seq() }
+            { full map { r => Seq("--full") } getOrElse Seq() } ++
+            { sortAction map { n => Seq("--sort-action") } getOrElse Seq() }
         cli(wp.overrides ++ params, expectedExitCode, showCmd = true, env = Map("WSK_CONFIG_FILE" -> cliCfgFile.getOrElse("")))
     }
 
