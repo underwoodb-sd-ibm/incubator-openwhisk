@@ -55,7 +55,7 @@ var namespaceListCmd = &cobra.Command{
             werr := whisk.MakeWskErrorFromWskError(errors.New(errStr), err, whisk.EXITCODE_ERR_NETWORK, whisk.DISPLAY_MSG, whisk.NO_DISPLAY_USAGE)
             return werr
         }
-        printList(namespaces)
+        printList(namespaces, false) // `--order` flag appliest to `namespace get`, not list, so must pass value false for printList here
         return nil
     },
 }
@@ -99,16 +99,19 @@ var namespaceGetCmd = &cobra.Command{
 
         fmt.Fprintf(color.Output, wski18n.T("Entities in namespace: {{.namespace}}\n",
             map[string]interface{}{"namespace": boldString(getClientNamespace())}))
-        printList(namespace.Contents.Packages)
-        printList(namespace.Contents.Actions)
-        printList(namespace.Contents.Triggers)
-        printList(namespace.Contents.Rules)
+        orderFlag := flags.common.time
+        printList(namespace.Contents.Packages, orderFlag)
+        printList(namespace.Contents.Actions, orderFlag)
+        printList(namespace.Contents.Triggers, orderFlag)
+        printList(namespace.Contents.Rules, orderFlag)
 
         return nil
     },
 }
 
 func init() {
+    namespaceGetCmd.Flags().BoolVarP(&flags.common.time, "time", "t", false, wski18n.T("sorts a list by creation time, from newest to oldest"))
+
     namespaceCmd.AddCommand(
         namespaceListCmd,
         namespaceGetCmd,

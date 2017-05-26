@@ -21,6 +21,9 @@ import (
     "net/http"
     "errors"
     "../wski18n"
+    "strings"
+    "fmt"
+    "github.com/fatih/color"
 )
 
 type Namespace struct {
@@ -37,6 +40,37 @@ type Contents struct {
 
 type NamespaceService struct {
     client *Client
+}
+
+// Compare(orderable, orderFlag) compares namespace to orderable for the purpose of sorting.
+// params: orderable that is also of type Action (REQUIRED).
+//      orderFlag changes sorting algorithm, if other ways to sort are available
+// ***Method of type Orderable***
+// ***By default, sorts Alphabetically***
+func(namespace Namespace) Compare(orderable Orderable, orderFlag bool) (bool) {
+    // convert orderable back to proper type
+    namespaceToCompare := orderable.(Namespace)
+    var namespaceString string
+    var compareString string
+
+    namespaceString = strings.ToLower(namespace.Name)
+    compareString = strings.ToLower(namespaceToCompare.Name)
+
+    return namespaceString < compareString
+}
+
+// ToHeaderString() returns the header for a list of namespaces
+func(namespace Namespace) ToHeaderString() string {
+	var boldString = color.New(color.Bold).SprintFunc()
+
+	return fmt.Sprintf("%s\n", boldString("namespaces"))
+}
+
+// ToSummaryRowString() returns a compound string of required parameters for printing
+//   from CLI command `wsk namespace list`.
+// ***Method of type Orderable***
+func(namespace Namespace) ToSummaryRowString() string {
+    return fmt.Sprintf("%s\n", namespace.Name)
 }
 
 // get a list of available namespaces

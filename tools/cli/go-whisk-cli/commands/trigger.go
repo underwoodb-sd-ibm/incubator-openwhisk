@@ -457,7 +457,8 @@ var triggerListCmd = &cobra.Command{
             werr := whisk.MakeWskErrorFromWskError(errors.New(errStr), err, whisk.EXITCODE_ERR_GENERAL, whisk.DISPLAY_MSG, whisk.NO_DISPLAY_USAGE)
             return werr
         }
-        printList(triggers)
+        orderFlag := flags.common.time
+        printList(triggers, orderFlag)
         return nil
     },
 }
@@ -510,6 +511,7 @@ func init() {
 
     triggerListCmd.Flags().IntVarP(&flags.common.skip, "skip", "s", 0, wski18n.T("exclude the first `SKIP` number of triggers from the result"))
     triggerListCmd.Flags().IntVarP(&flags.common.limit, "limit", "l", 30, wski18n.T("only return `LIMIT` number of triggers from the collection"))
+    triggerListCmd.Flags().BoolVarP(&flags.common.time, "time", "t", false, wski18n.T("sorts a list by creation time, from newest to oldest"))
 
     triggerCmd.AddCommand(
         triggerFireCmd,

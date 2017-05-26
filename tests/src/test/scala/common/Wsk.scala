@@ -152,10 +152,12 @@ trait ListOrGetFromCollection extends FullyQualifiedNames {
     def list(
         namespace: Option[String] = None,
         limit: Option[Int] = None,
+        time: Option[Boolean] = None,
         expectedExitCode: Int = SUCCESS_EXIT)(
             implicit wp: WskProps): RunResult = {
         val params = Seq(noun, "list", resolve(namespace), "--auth", wp.authKey) ++
-            { limit map { l => Seq("--limit", l.toString) } getOrElse Seq() }
+            { limit map { l => Seq("--limit", l.toString) } getOrElse Seq() } ++
+            { time map { t => Seq("--time") } getOrElse Seq() }
         cli(wp.overrides ++ params, expectedExitCode)
     }
 
@@ -698,9 +700,12 @@ class WskNamespace()
      * @param expectedExitCode (optional) the expected exit code for the command
      * if the code is anything but DONTCARE_EXIT, assert the code is as expected
      */
-    def list(expectedExitCode: Int = SUCCESS_EXIT)(
+    def list(
+        expectedExitCode: Int = SUCCESS_EXIT,
+        time: Option[Boolean] = None)(
         implicit wp: WskProps): RunResult = {
-        val params = Seq(noun, "list", "--auth", wp.authKey)
+        val params = Seq(noun, "list", "--auth", wp.authKey) ++
+            { time map { o => Seq("--time") } getOrElse Seq() }
         cli(wp.overrides ++ params, expectedExitCode)
     }
 
@@ -726,9 +731,11 @@ class WskNamespace()
      */
     def get(
         namespace: Option[String] = None,
-        expectedExitCode: Int)(
+        expectedExitCode: Int,
+        time: Option[Boolean] = None)(
             implicit wp: WskProps): RunResult = {
-        cli(wp.overrides ++ Seq(noun, "get", resolve(namespace), "--auth", wp.authKey), expectedExitCode)
+            val params = { time map { t => Seq("--time") } getOrElse Seq() }
+        cli(wp.overrides ++ Seq(noun, "get", resolve(namespace), "--auth", wp.authKey) ++ params, expectedExitCode)
     }
 }
 
@@ -826,6 +833,7 @@ class WskApiExperimental extends RunWskCmd {
         limit: Option[Int] = None,
         since: Option[Instant] = None,
         full: Option[Boolean] = None,
+        time: Option[Boolean] = None,
         expectedExitCode: Int = SUCCESS_EXIT)(
             implicit wp: WskProps): RunResult = {
         val params = Seq(noun, "list", "--auth", wp.authKey) ++
@@ -834,7 +842,8 @@ class WskApiExperimental extends RunWskCmd {
             { operation map { o => Seq(o) } getOrElse Seq() } ++
             { limit map { l => Seq("--limit", l.toString) } getOrElse Seq() } ++
             { since map { i => Seq("--since", i.toEpochMilli.toString) } getOrElse Seq() } ++
-            { full map { r => Seq("--full") } getOrElse Seq() }
+            { full map { r => Seq("--full") } getOrElse Seq() } ++
+            { time map { t => Seq("--time") } getOrElse Seq() }
         cli(wp.overrides ++ params, expectedExitCode, showCmd = true)
     }
 
@@ -920,6 +929,7 @@ class WskApi()
         limit: Option[Int] = None,
         since: Option[Instant] = None,
         full: Option[Boolean] = None,
+        time: Option[Boolean] = None,
         expectedExitCode: Int = SUCCESS_EXIT,
         cliCfgFile: Option[String] = None)(
             implicit wp: WskProps): RunResult = {
@@ -929,7 +939,8 @@ class WskApi()
             { operation map { o => Seq(o) } getOrElse Seq() } ++
             { limit map { l => Seq("--limit", l.toString) } getOrElse Seq() } ++
             { since map { i => Seq("--since", i.toEpochMilli.toString) } getOrElse Seq() } ++
-            { full map { r => Seq("--full") } getOrElse Seq() }
+            { full map { r => Seq("--full") } getOrElse Seq() } ++
+            { time map { o => Seq("--time") } getOrElse Seq() }
         cli(wp.overrides ++ params, expectedExitCode, showCmd = true, env = Map("WSK_CONFIG_FILE" -> cliCfgFile.getOrElse("")))
     }
 

@@ -320,7 +320,8 @@ var actionListCmd = &cobra.Command{
             return actionListError(qualifiedName.entityName, options, err)
         }
 
-        printList(actions)
+        orderFlag := flags.common.time
+        printList(actions, orderFlag)
 
         return nil
     },
@@ -936,6 +937,7 @@ func init() {
 
     actionListCmd.Flags().IntVarP(&flags.common.skip, "skip", "s", 0, wski18n.T("exclude the first `SKIP` number of actions from the result"))
     actionListCmd.Flags().IntVarP(&flags.common.limit, "limit", "l", 30, wski18n.T("only return `LIMIT` number of actions from the collection"))
+    actionListCmd.Flags().BoolVarP(&flags.common.time, "time", "t", false, wski18n.T("sorts a list by creation time, from newest to oldest"))
 
     actionCmd.AddCommand(
         actionCreateCmd,

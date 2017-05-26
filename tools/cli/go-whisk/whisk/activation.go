@@ -23,6 +23,7 @@ import (
     "errors"
     "net/url"
     "../wski18n"
+    "github.com/fatih/color"
 )
 
 type ActivationService struct {
@@ -68,6 +69,27 @@ type Log struct {
     Log    string `json:"log,omitempty"`
     Stream string `json:"stream,omitempty"`
     Time   string `json:"time,omitempty"`
+}
+
+// Compare(orderable) compares activation to orderable for the purpose of sorting.
+// params: orderable that is also of type Activation (REQUIRED).
+// ***Method of type Orderable***
+// ***Currently, no method of sorting defined***
+func(activation Activation) Compare(orderable Orderable, orderFlag bool) (bool) {
+	return true
+}
+
+// ToHeaderString() returns the header for a list of activations
+func(activation Activation) ToHeaderString() string {
+	var boldString = color.New(color.Bold).SprintFunc()
+	return fmt.Sprintf("%s\n", boldString("activations"))
+}
+
+// ToSummaryRowString() returns a compound string of required parameters for printing
+//   from CLI command `wsk activation list`.
+// ***Method of type Orderable***
+func(activation Activation) ToSummaryRowString() string {
+	return fmt.Sprintf("%s %-20s\n", activation.ActivationID, activation.Name)
 }
 
 func (s *ActivationService) List(options *ActivationListOptions) ([]Activation, *http.Response, error) {

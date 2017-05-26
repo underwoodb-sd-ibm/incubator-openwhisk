@@ -61,6 +61,7 @@ type Flags struct {
         feed        string  // name of feed
         detail      bool
         format      string
+        time        bool    // orders list by creation time
     }
 
     property struct {

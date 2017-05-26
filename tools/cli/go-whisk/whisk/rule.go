@@ -24,6 +24,7 @@ import (
     "errors"
     "net/url"
     "../wski18n"
+    "github.com/fatih/color"
 )
 
 type RuleService struct {
@@ -38,13 +39,47 @@ type Rule struct {
     Trigger interface{} `json:"trigger"`
     Action  interface{} `json:"action"`
     Publish *bool       `json:"publish,omitempty"`
-
 }
 
 type RuleListOptions struct {
     Limit       int     `url:"limit"`
     Skip        int     `url:"skip"`
     Docs        bool    `url:"docs,omitempty"`
+}
+
+// Compare(orderable, orderFlag) compares rule to orderable for the purpose of sorting.
+// params: orderable that is also of type Action (REQUIRED).
+//      orderFlag changes sorting algorithm, if other ways to sort are available
+// ***Method of type Orderable***
+// ***By default, sorts Alphabetically***
+func(rule Rule) Compare(orderable Orderable, orderFlag bool) (bool) {
+  // convert orderable back to proper type
+  ruleToCompare := orderable.(Rule)
+  var ruleString string
+  var compareString string
+
+  ruleString = strings.ToLower(fmt.Sprintf("%s%s",rule.Namespace, rule.Name))
+  compareString = strings.ToLower(fmt.Sprintf("%s%s", ruleToCompare.Namespace,
+      ruleToCompare.Name))
+
+  return ruleString < compareString
+}
+
+// ToHeaderString() returns the header for a list of rules
+func(rule Rule) ToHeaderString() string {
+	var boldString = color.New(color.Bold).SprintFunc()
+
+	return fmt.Sprintf("%s\n", boldString("rules"))
+}
+
+// ToSummaryRowString() returns a compound string of required parameters for printing
+//   from CLI command `wsk rule list`.
+// ***Method of type Orderable***
+func(rule Rule) ToSummaryRowString() string{
+    publishState := wski18n.T("private")
+
+    return fmt.Sprintf("%-70s %s\n", fmt.Sprintf("/%s/%s", rule.Namespace,
+        rule.Name), publishState)
 }
 
 func (s *RuleService) List(options *RuleListOptions) ([]Rule, *http.Response, error) {

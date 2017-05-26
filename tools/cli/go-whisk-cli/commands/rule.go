@@ -402,7 +402,9 @@ var ruleListCmd = &cobra.Command{
                 rules[index].Status = ruleStatus.Status
             }
         }
-        printList(rules)
+
+        orderFlag := flags.common.time
+        printList(rules, orderFlag)
         return nil
     },
 }
@@ -414,6 +416,7 @@ func init() {
 
     ruleListCmd.Flags().IntVarP(&flags.common.skip, "skip", "s", 0, wski18n.T("exclude the first `SKIP` number of rules from the result"))
     ruleListCmd.Flags().IntVarP(&flags.common.limit, "limit", "l", 30, wski18n.T("only return `LIMIT` number of rules from the collection"))
+    ruleListCmd.Flags().BoolVarP(&flags.common.time, "time", "t", false, wski18n.T("sorts a list by creation time, from newest to oldest"))
 
     ruleCmd.AddCommand(
         ruleCreateCmd,

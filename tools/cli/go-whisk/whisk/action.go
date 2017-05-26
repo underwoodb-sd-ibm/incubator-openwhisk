@@ -25,6 +25,7 @@ import (
     "strings"
 
     "../wski18n"
+    "github.com/fatih/color"
 )
 
 type ActionService struct {
@@ -57,6 +58,56 @@ type ActionListOptions struct {
     Limit       int         `url:"limit"`
     Skip        int         `url:"skip"`
     Docs        bool        `url:"docs,omitempty"`
+}
+
+// Compare(orderable, orderFlag) compares action to orderable for the purpose of sorting.
+// params: orderable that is also of type Action (REQUIRED).
+//      orderFlag changes sorting algorithm, if other ways to sort are available
+// ***Method of type Orderable***
+// ***By default, sorts Alphabetically***
+func(action Action) Compare(orderable Orderable, orderFlag bool) (bool) {
+  // convert orderable back to proper type
+  var actionString string
+  var compareString string
+  actionToCompare := orderable.(Action)
+
+  actionString = strings.ToLower(fmt.Sprintf("%s%s", action.Namespace, action.Name))
+  compareString = strings.ToLower(fmt.Sprintf("%s%s", actionToCompare.Namespace,
+      actionToCompare.Name))
+
+  //return actionString < compareString
+  if strings.Contains(action.Namespace, "/") && !strings.Contains(actionToCompare.Namespace, "/") {
+      return false
+  } else if !strings.Contains(action.Namespace, "/") && strings.Contains(actionToCompare.Namespace, "/") {
+      return true
+  } else if strings.Contains(action.Namespace, "/") && strings.Contains(actionToCompare.Namespace, "/") {
+      return actionString < compareString
+  } else {
+      return action.Name < actionToCompare.Name
+  }
+}
+
+// ToHeaderString() returns the header for a list of actions
+func(action Action) ToHeaderString() string {
+	var boldString = color.New(color.Bold).SprintFunc()
+
+	return fmt.Sprintf("%s\n", boldString("actions"))
+}
+
+// ToSummaryRowString() returns a compound string of required parameters for printing
+//   from CLI command `wsk action list`.
+// ***Method of type Orderable***
+func(action Action) ToSummaryRowString() string{
+    var kind string
+    publishState := wski18n.T("private")
+
+    for i := range action.Annotations {
+        if (action.Annotations[i].Key == "exec") {
+            kind = action.Annotations[i].Value.(string)
+            break
+        }
+    }
+    return fmt.Sprintf("%-70s %s %s\n", fmt.Sprintf("/%s/%s", action.Namespace, action.Name), publishState, kind)
 }
 
 /*

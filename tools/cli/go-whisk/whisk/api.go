@@ -21,6 +21,8 @@ import (
     "net/http"
     "errors"
     "../wski18n"
+    "strings"
+    "fmt"
 )
 
 type ApiService struct {
@@ -184,6 +186,27 @@ type ApiSwaggerOpXOpenWhiskV2 struct {
     ApiUrl          string    `json:"url"`
 }
 
+// Used for printing individual APIs in non-truncated form
+type ApiFilteredList struct {
+    ActionName      string
+    ApiName         string
+    BasePath        string
+    RelPath         string
+    Verb            string
+    Url             string
+}
+
+// Used for printing individual APIs in truncated form
+type ApiFilteredRow struct {
+    ActionName      string
+    ApiName         string
+    BasePath        string
+    RelPath         string
+    Verb            string
+    Url             string
+    FmtString       string
+}
+
 var ApiVerbs map[string]bool = map[string]bool {
     "GET": true,
     "PUT": true,
@@ -202,6 +225,76 @@ const (
 ////////////////////
 // Api Methods //
 ////////////////////
+
+// Compare(orderable, orderFlag) compares api to orderable for the purpose of sorting.
+// params: orderable that is also of type Action (REQUIRED).
+//      orderFlag changes sorting algorithm, if other ways to sort are available
+// ***Method of type Orderable***
+// ***By default, sorts Alphabetically***
+func(api ApiFilteredList) Compare(orderable Orderable, orderFlag bool) (bool) {
+  // convert orderable back to proper type
+  apiToCompare := orderable.(ApiFilteredList)
+  var apiString string
+  var compareString string
+
+  // Check for orderFlag to build proper comparison strings
+  apiString = strings.ToLower(fmt.Sprintf("%s%s%s",api.BasePath, api.RelPath,
+      api.Verb))
+  compareString = strings.ToLower(fmt.Sprintf("%s%s%s", apiToCompare.BasePath,
+      apiToCompare.RelPath, apiToCompare.Verb))
+
+  return apiString < compareString
+}
+
+// ToHeaderString() returns the header for a list of apis
+func(api ApiFilteredList) ToHeaderString() string {
+	return ""
+}
+
+// ToSummaryRowString() returns a compound string of required parameters for printing
+//   from CLI command `wsk api list` or `wsk api-experimental list`.
+// ***Method of type Orderable***
+func(api ApiFilteredList) ToSummaryRowString() string {
+    return fmt.Sprintf("%s %s %s %s %s %s",
+        fmt.Sprintf("%s: %s\n", wski18n.T("Action"), api.ActionName),
+        fmt.Sprintf("  %s: %s\n", wski18n.T("API Name"), api.ApiName),
+        fmt.Sprintf("  %s: %s\n", wski18n.T("Base path"), api.BasePath),
+        fmt.Sprintf("  %s: %s\n", wski18n.T("Path"), api.RelPath),
+        fmt.Sprintf("  %s: %s\n", wski18n.T("Verb"), api.Verb),
+        fmt.Sprintf("  %s: %s\n", wski18n.T("URL"), api.Url))
+}
+
+// Compare(orderable, orderFlag) compares api to orderable for the purpose of sorting.
+// params: orderable that is also of type Action (REQUIRED).
+//      orderFlag changes sorting algorithm, if other ways to sort are available
+// ***Method of type Orderable***
+// ***By default, sorts Alphabetically***
+func(api ApiFilteredRow) Compare(orderable Orderable, orderFlag bool) (bool) {
+  // convert orderable back to proper type
+  var apiString string
+  var compareString string
+  apiToCompare := orderable.(ApiFilteredRow)
+
+  // Check for orderFlag to build proper comparison strings
+  apiString = strings.ToLower(fmt.Sprintf("%s%s%s",api.BasePath, api.RelPath,
+      api.Verb))
+  compareString = strings.ToLower(fmt.Sprintf("%s%s%s", apiToCompare.BasePath,
+      apiToCompare.RelPath, apiToCompare.Verb))
+
+  return apiString < compareString
+}
+
+// ToHeaderString() returns the header for a list of apis
+func(api ApiFilteredRow) ToHeaderString() string {
+	return fmt.Sprintf("%s", fmt.Sprintf(api.FmtString, "Action", "Verb", "API Name", "URL"))
+}
+
+// ToSummaryRowString() returns a compound string of required parameters for printing
+//   from CLI command `wsk api list -f` or `wsk api-experimental list -f`.
+// ***Method of type Orderable***
+func(api ApiFilteredRow) ToSummaryRowString() string {
+  return fmt.Sprintf(api.FmtString, api.ActionName, api.Verb, api.ApiName, api.Url)
+}
 
 func (s *ApiService) List(apiListOptions *ApiListRequestOptions) (*ApiListResponse, *http.Response, error) {
     route := "web/whisk.system/routemgmt/getApi.http"
@@ -499,7 +592,7 @@ func (s *ApiService) DeleteV2(api *ApiDeleteRequest, options *ApiDeleteRequestOp
 
 
 func validateApiListResponse(apiList *ApiListResponseV2) error {
-    for i:=0; i<len(apiList.Apis); i++ {
+    for i := 0; i < len(apiList.Apis); i++ {
         if apiList.Apis[i].ApiValue == nil {
             Debug(DbgError, "validateApiResponse: No value stanza in api %v\n", apiList.Apis[i])
             errMsg := wski18n.T("Internal error. Missing value stanza in API configuration response")

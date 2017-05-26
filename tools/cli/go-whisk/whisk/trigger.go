@@ -23,6 +23,8 @@ import (
     "errors"
     "net/url"
     "../wski18n"
+    "strings"
+    "github.com/fatih/color"
 )
 
 type TriggerService struct {
@@ -38,13 +40,48 @@ type Trigger struct {
     Parameters      KeyValueArr     `json:"parameters,omitempty"`
     Limits          *Limits         `json:"limits,omitempty"`
     Publish         *bool           `json:"publish,omitempty"`
-
 }
 
 type TriggerListOptions struct {
     Limit           int             `url:"limit"`
     Skip            int             `url:"skip"`
     Docs            bool            `url:"docs,omitempty"`
+}
+
+// Compare(orderable, orderFlag) compares trigger to orderable for the purpose of sorting.
+// params: orderable that is also of type Action (REQUIRED).
+//      orderFlag changes sorting algorithm, if other ways to sort are available
+// ***Method of type Orderable***
+// ***By default, sorts Alphabetically***
+func(trigger Trigger) Compare(orderable Orderable, orderFlag bool) (bool) {
+    // convert orderable back to proper type
+    triggerToCompare := orderable.(Trigger)
+    var triggerString string
+    var compareString string
+
+    triggerString = strings.ToLower(fmt.Sprintf("%s%s",trigger.Namespace,
+        trigger.Name))
+    compareString = strings.ToLower(fmt.Sprintf("%s%s", triggerToCompare.Namespace,
+        triggerToCompare.Name))
+
+    return triggerString < compareString
+}
+
+// ToHeaderString() returns the header for a list of triggers
+func(trigger Trigger) ToHeaderString() string {
+	var boldString = color.New(color.Bold).SprintFunc()
+
+	return fmt.Sprintf("%s\n", boldString("triggers"))
+}
+
+// ToSummaryRowString() returns a compound string of required parameters for printing
+//   from CLI command `wsk trigger list`.
+// ***Method of type Orderable***
+func(trigger Trigger) ToSummaryRowString() string {
+    publishState := wski18n.T("private")
+
+    return fmt.Sprintf("%-70s %s\n", fmt.Sprintf("/%s/%s", trigger.Namespace,
+        trigger.Name), publishState)
 }
 
 func (s *TriggerService) List(options *TriggerListOptions) ([]Trigger, *http.Response, error) {

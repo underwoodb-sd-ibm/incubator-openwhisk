@@ -1412,8 +1412,8 @@
     "translation": "display full description of each API"
   },
   {
-    "id": "An API host must be provided.",
-    "translation": "An API host must be provided."
+    "id": "order API list by action name first followed by base-path/rel-path/verb",
+    "translation": "order API list by action name first followed by base-path/rel-path/verb."
   },
   {
     "id": "Request accepted, but processing not completed yet.",
@@ -1518,5 +1518,9 @@
   {
     "id": "get action url",
     "translation": "get action url"
+  },
+  {
+    "id": "sorts a list by creation time, from newest to oldest",
+    "translation": "sorts a list by creation time, from newest to oldest"
   }
 ]

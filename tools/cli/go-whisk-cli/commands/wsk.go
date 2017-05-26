@@ -44,6 +44,8 @@ func init() {
     WskCmd.SetHelpTemplate(`{{with or .Long .Short }}{{.}}
 {{end}}{{if or .Runnable .HasSubCommands}}{{.UsageString}}{{end}}`)
 
+listCmd.Flags().BoolVarP(&flags.common.time, "time", "t", false, wski18n.T("sorts a list by creation time, from newest to oldest"))
+
     WskCmd.AddCommand(
         actionCmd,
         activationCmd,

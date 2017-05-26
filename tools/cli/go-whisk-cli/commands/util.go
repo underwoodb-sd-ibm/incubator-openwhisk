@@ -243,28 +243,99 @@ func getEscapedJSON(value string) (string) {
 func isValidJSON(value string) (bool) {
     var jsonInterface interface{}
     err := json.Unmarshal([]byte(value), &jsonInterface)
+
     return err == nil
 }
 
 var boldString = color.New(color.Bold).SprintFunc()
 
-func printList(collection interface{}) {
-    switch collection := collection.(type) {
-    case []whisk.Action:
-        printActionList(collection)
-    case []whisk.Trigger:
-        printTriggerList(collection)
-    case []whisk.Package:
-        printPackageList(collection)
-    case []whisk.Rule:
-        printRuleList(collection)
-    case []whisk.Namespace:
-        printNamespaceList(collection)
-    case []whisk.Activation:
-        printActivationList(collection)
-    case []whisk.Api:
-        printApiList(collection)
+type Orderables []whisk.Orderable
+// Uses quickSort to sort commands based on their compare methods
+// Param: Takes in a array of Orderable interfaces which contains a specific command
+func Swap(orderables Orderables, i, j int) { orderables[i], orderables[j] = orderables[j], orderables[i] }
+
+func toPrintable(orderable []whisk.Orderable) []whisk.Printable{
+    sortedPrintable := make([]whisk.Printable, len(orderable), len(orderable))
+    for i := range orderable {
+        sortedPrintable[i] = orderable[i].(whisk.Printable)
     }
+    return sortedPrintable
+}
+
+// Prints the parameters/list for wsk xxxx list
+// Identifies type and then copies array into an array of interfaces(Orderable) to be sorted and printed
+// Param: Takes in an interace which contains an array of a command(Ex: []Action)
+func printList(collection interface{}, orderFlag bool) {
+    var commandToSort []whisk.Orderable
+    switch collection := collection.(type){
+    case []whisk.Action:
+        for i := range collection {
+            commandToSort = append(commandToSort, collection[i])
+        }
+    case []whisk.Trigger:
+        for i := range collection {
+            commandToSort = append(commandToSort, collection[i])
+        }
+    case []whisk.Package:
+        for i := range collection {
+            commandToSort = append(commandToSort, collection[i])
+        }
+    case []whisk.Rule:
+        for i := range collection {
+            commandToSort = append(commandToSort, collection[i])
+        }
+    case []whisk.Namespace:
+        for i := range collection {
+            commandToSort = append(commandToSort, collection[i])
+        }
+    case []whisk.Activation:
+        for i := range collection {
+            commandToSort = append(commandToSort, collection[i])
+        }
+    case []whisk.ApiFilteredList:
+        for i := range collection {
+            commandToSort = append(commandToSort, collection[i])
+        }
+    case []whisk.ApiFilteredRow:
+        for i := range collection {
+            commandToSort = append(commandToSort, collection[i])
+        }
+    }
+    if !orderFlag && len(commandToSort) > 0 {
+        quickSort(commandToSort, 0, len(commandToSort)-1, orderFlag)
+    }
+	printCommandsList(toPrintable(commandToSort), makeDefaultHeader(collection))
+}
+
+func quickSort(array Orderables, left int, right int, flag bool) {
+	low := left
+	high := right
+	pivot := array[(left + right) / 2]
+
+	for low <= high {
+		for array[low].Compare(pivot, flag) { low++ }
+		for pivot.Compare(array[high], flag) { high-- }
+		if low <= high {
+			Swap(array, low, high)
+			low++
+			high--
+		}
+	}
+	if left < high { quickSort(array, left, high, flag) }
+	if low < right { quickSort(array, low, right, flag) }
+}
+
+// makeDefaultHeader(collection) returns the default header to be used in case
+//      the list to be printed is empty.
+func makeDefaultHeader(collection interface{}) string {
+    defaultHeader := reflect.TypeOf(collection).String()
+    defaultHeader = strings.ToLower(defaultHeader[8:] + "s")    // Removes '[]whisk.' from `[]whisk.ENTITY_TYPE`
+    if defaultHeader == "apifilteredrows" {
+        defaultHeader = fmt.Sprintf("%-30s %7s %20s  %s", "Action", "Verb", "API Name", "URL")
+    } else if defaultHeader == "apifilteredlists" {
+        defaultHeader = ""
+    }
+    return defaultHeader
 }
 
 func printFullList(collection interface{}) {
@@ -300,53 +371,18 @@ func printSummary(collection interface{}) {
     }
 }
 
-func printActionList(actions []whisk.Action) {
-    fmt.Fprintf(color.Output, "%s\n", boldString("actions"))
-    for _, action := range actions {
-        publishState := wski18n.T("private")
-        kind := getValueString(action.Annotations, "exec")
-        fmt.Printf("%-70s %s %s\n", fmt.Sprintf("/%s/%s", action.Namespace, action.Name), publishState, kind)
-    }
-}
-
-func printTriggerList(triggers []whisk.Trigger) {
-    fmt.Fprintf(color.Output, "%s\n", boldString("triggers"))
-    for _, trigger := range triggers {
-        publishState := wski18n.T("private")
-        fmt.Printf("%-70s %s\n", fmt.Sprintf("/%s/%s", trigger.Namespace, trigger.Name), publishState)
-    }
-}
-
-func printPackageList(packages []whisk.Package) {
-    fmt.Fprintf(color.Output, "%s\n", boldString("packages"))
-    for _, xPackage := range packages {
-        publishState := wski18n.T("private")
-        if xPackage.Publish != nil && *xPackage.Publish {
-            publishState = wski18n.T("shared")
+// Used to print Action, Tigger, Package, and Rule lists
+// Param: Takes in a array of Printable interface, and the name of the command
+//          being sent to it
+// **Note**: The name sould be an empty string for APIs.
+func printCommandsList(commands []whisk.Printable, defaultHeader string) {
+    if len(commands) != 0 {
+        fmt.Fprint(color.Output, commands[0].ToHeaderString())
+        for i := range commands {
+            fmt.Print(commands[i].ToSummaryRowString())
         }
-        fmt.Printf("%-70s %s\n", fmt.Sprintf("/%s/%s", xPackage.Namespace, xPackage.Name), publishState)
-    }
-}
-
-func printRuleList(rules []whisk.Rule) {
-    fmt.Fprintf(color.Output, "%s\n", boldString("rules"))
-    for _, rule := range rules {
-        publishState := wski18n.T("private")
-        fmt.Printf("%-70s %-20s %s\n", fmt.Sprintf("/%s/%s", rule.Namespace, rule.Name), publishState, rule.Status)
-    }
-}
-
-func printNamespaceList(namespaces []whisk.Namespace) {
-    fmt.Fprintf(color.Output, "%s\n", boldString("namespaces"))
-    for _, namespace := range namespaces {
-        fmt.Printf("%s\n", namespace.Name)
-    }
-}
-
-func printActivationList(activations []whisk.Activation) {
-    fmt.Fprintf(color.Output, "%s\n", boldString("activations"))
-    for _, activation := range activations {
-        fmt.Printf("%s %-20s\n", activation.ActivationID, activation.Name)
+    } else {
+        fmt.Fprintf(color.Output, "%s\n", boldString(defaultHeader))
     }
 }
 
@@ -354,20 +390,6 @@ func printFullActivationList(activations []whisk.Activation) {
     fmt.Fprintf(color.Output, "%s\n", boldString("activations"))
     for _, activation := range activations {
         printJSON(activation)
-    }
-}
-
-func printApiList(apis []whisk.Api) {
-    fmt.Fprintf(color.Output, "%s\n", boldString("apis"))
-    for _, api := range apis {
-        fmt.Printf("%s %20s %20s\n", api.ApiName, api.GatewayBasePath, api.GatewayFullPath)
-    }
-}
-
-func printFullApiList(apis []whisk.Api) {
-    fmt.Fprintf(color.Output, "%s\n", boldString("apis"))
-    for _, api := range apis {
-        printJSON(api)
     }
 }
 

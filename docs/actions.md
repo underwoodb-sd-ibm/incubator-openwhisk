@@ -1022,11 +1022,22 @@ This command starts a polling loop that continuously checks for logs from activa
 
 ## Listing actions
 
-You can list all the actions that you have created using:
+You can list all the actions that you have created using `wsk action list`:
 
 ```
 wsk action list
+actions
+/guest/A                           private nodejs:6
+/guest/B                           private nodejs:6
+/guest/C                           private nodejs:6
+/guest/packageA/A                  private nodejs:6
+/guest/packageA/B                  private nodejs:6
+/guest/packageB/A                  private nodejs:6
 ```
+
+Here, we see actions listed in alphabetical order from namespace to package name to action name, with the default package (no specified package) listed at the top.
+
+**Note**: The printed list is sorted alphabetically after it is received from the server. Other list flags such as `--limit` and `--skip` will be applied to the block of actions before they are received for sorting. To list actions in order by creation time, use the flag `--time`.
 
 As you write more actions, this list gets longer and it can be helpful to group related actions into [packages](./packages.md). To filter your list of actions to just the those within a specific pacakge, you can use:
 
