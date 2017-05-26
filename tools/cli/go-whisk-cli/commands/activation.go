@@ -93,7 +93,11 @@ var activationListCmd = &cobra.Command{
         if options.Docs == true {
             printFullActivationList(activations)
         } else {
+<<<<<<< HEAD
             printList(activations, true)   // Default sorting for Activations are by creation time, hence orderFlag is always true
+=======
+            printList(activations, true)   // Default sorting for Activations are by creation time, hence orderFlag is always true 
+>>>>>>> Added alphabetized sorting
         }
 
         return nil
