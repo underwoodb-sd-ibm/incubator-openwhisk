@@ -1360,6 +1360,10 @@
     "translation": "display full description of each API"
   },
   {
+    "id": "sorts api list by action name first followed by base-path/rel-path/verb",
+    "translation": "sorts api list by action name first followed by base-path/rel-path/verb"
+  },
+  {
     "id": "An API host must be provided.",
     "translation": "An API host must be provided."
   },

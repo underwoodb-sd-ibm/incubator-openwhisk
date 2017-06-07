@@ -1178,7 +1178,7 @@ var apiListCmdV2 = &cobra.Command{
             for i:=0; i< len(retApiArray.Apis); i++ {
                 sortFilteredList[i] = printFilteredListApiV2(retApiArray.Apis[i].ApiValue, apiPath, apiVerb,flagType)
             }
-            printList(sortFilteredList)
+            printList(sortFilteredList) //Sends and array of structs that contains specified variables that are not truncated
         } else {
             if (len(retApiArray.Apis) > 0) {
                 // Dynamically create the output format string based on the maximum size of the
@@ -1196,7 +1196,7 @@ var apiListCmdV2 = &cobra.Command{
                 for i:=0; i< len(retApiArray.Apis); i++ {
                     sortFilteredRow[i] = printFilteredListRowV2(retApiArray.Apis[i].ApiValue, apiPath, apiVerb, maxActionNameSize, maxApiNameSize,flagType)
                 }
-                printList(sortFilteredRow)
+                printList(sortFilteredRow) //Sends an array of structs that contains specified variables that are truncated
             } else {
                 fmt.Fprintf(color.Output,
                     wski18n.T("{{.ok}} APIs\n",
@@ -1215,6 +1215,7 @@ var apiListCmdV2 = &cobra.Command{
  * Takes an API object (containing one more more single basepath/relpath/operation triplets)
  * and some filtering configuration.  For each API endpoint matching the filtering criteria, display
  * each endpoint's configuration - one line per configuration property (action name, verb, api name, api gw url)
+ * ***Parses and initializes values for ApiFilteredList struct
  */
 func printFilteredListApiV2(resultApi *whisk.RetApiV2, apiPath string, apiVerb string, flagType string) whisk.ApiFilteredList{
     var infoArr whisk.ApiFilteredList
@@ -1255,7 +1256,7 @@ func printFilteredListApiV2(resultApi *whisk.RetApiV2, apiPath string, apiVerb s
  * Takes an API object (containing one more more single basepath/relpath/operation triplets)
  * and some filtering configuration.  For each API matching the filtering criteria, display the API
  * on a single line (action name, verb, api name, api gw url).
- *
+ * ***Parses and initializes values for ApiFilteredRow
  * NOTE: Large action name and api name value will be truncated by their associated max size parameters.
  */
 func printFilteredListRowV2(resultApi *whisk.RetApiV2, apiPath string, apiVerb string, maxActionNameSize int, maxApiNameSize int, flagType string) whisk.ApiFilteredRow {
