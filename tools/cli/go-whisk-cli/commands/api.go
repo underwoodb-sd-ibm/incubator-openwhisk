@@ -299,7 +299,7 @@ var apiDeleteCmd = &cobra.Command{
         if err != nil {
             whisk.Debug(whisk.DbgError, "client.Apis.Delete(%#v, %#v) error: %s\n", apiDeleteReq, apiDeleteReqOptions, err)
             errMsg := wski18n.T("Unable to delete API: {{.err}}", map[string]interface{}{"err": err})
-            whiskErr := whisk.MakeWskError(errors.New(errMsg), whisk.EXITCODE_ERR_GENERAL,
+            whiskErr := whisk.MakeWskErrorFromWskError(errors.New(errMsg), err, whisk.EXITCODE_ERR_GENERAL,
                 whisk.DISPLAY_MSG, whisk.NO_DISPLAY_USAGE)
             return whiskErr
         }
@@ -1089,6 +1089,8 @@ var apiListCmdV2 = &cobra.Command{
         var retApiArray *whisk.RetApiArrayV2
         var apiPath string
         var apiVerb string
+        var flagType string
+
 
         if whiskErr := checkArgs(args, 0, 3, "Api list",
             wski18n.T("Optional parameters are: API base path (or API name), API relative path and operation.")); whiskErr != nil {
@@ -1162,7 +1164,9 @@ var apiListCmdV2 = &cobra.Command{
             // Cast to a common type to allow for code to print out apilist response or apiget response
             retApiArray = (*whisk.RetApiArrayV2)(retApi)
         }
-
+        if flags.api.sortAction {
+          flagType = "a"
+        }
         // Display the APIs - applying any specified filtering
         if (flags.common.full) {
             fmt.Fprintf(color.Output,
@@ -1170,10 +1174,11 @@ var apiListCmdV2 = &cobra.Command{
                     map[string]interface{}{
                         "ok": color.GreenString("ok:"),
                     }))
-
-            for i:=0; i<len(retApiArray.Apis); i++ {
-                printFilteredListApiV2(retApiArray.Apis[i].ApiValue, apiPath, apiVerb)
+            sortFilteredList := make([]whisk.ApiFilteredList, len(retApiArray.Apis))
+            for i:=0; i< len(retApiArray.Apis); i++ {
+                sortFilteredList[i] = printFilteredListApiV2(retApiArray.Apis[i].ApiValue, apiPath, apiVerb,flagType)
             }
+            printList(sortFilteredList)
         } else {
             if (len(retApiArray.Apis) > 0) {
                 // Dynamically create the output format string based on the maximum size of the
@@ -1187,9 +1192,11 @@ var apiListCmdV2 = &cobra.Command{
                             "ok": color.GreenString("ok:"),
                         }))
                 fmt.Printf(fmtString, "Action", "Verb", "API Name", "URL")
-                for i:=0; i<len(retApiArray.Apis); i++ {
-                    printFilteredListRowV2(retApiArray.Apis[i].ApiValue, apiPath, apiVerb, maxActionNameSize, maxApiNameSize)
+                sortFilteredRow := make([]whisk.ApiFilteredRow, len(retApiArray.Apis))
+                for i:=0; i< len(retApiArray.Apis); i++ {
+                    sortFilteredRow[i] = printFilteredListRowV2(retApiArray.Apis[i].ApiValue, apiPath, apiVerb, maxActionNameSize, maxApiNameSize,flagType)
                 }
+                printList(sortFilteredRow)
             } else {
                 fmt.Fprintf(color.Output,
                     wski18n.T("{{.ok}} APIs\n",
@@ -1209,7 +1216,8 @@ var apiListCmdV2 = &cobra.Command{
  * and some filtering configuration.  For each API endpoint matching the filtering criteria, display
  * each endpoint's configuration - one line per configuration property (action name, verb, api name, api gw url)
  */
-func printFilteredListApiV2(resultApi *whisk.RetApiV2, apiPath string, apiVerb string) {
+func printFilteredListApiV2(resultApi *whisk.RetApiV2, apiPath string, apiVerb string, flagType string) whisk.ApiFilteredList{
+    var infoArr whisk.ApiFilteredList
     baseUrl := strings.TrimSuffix(resultApi.BaseUrl, "/")
     apiName := resultApi.Swagger.Info.Title
     basePath := resultApi.Swagger.BasePath
@@ -1228,17 +1236,19 @@ func printFilteredListApiV2(resultApi *whisk.RetApiV2, apiPath string, apiVerb s
                         } else {
                             actionName = "/"+opv.XOpenWhisk.Namespace+"/"+opv.XOpenWhisk.ActionName
                         }
-                        fmt.Printf("%s: %s\n", wski18n.T("Action"), actionName)
-                        fmt.Printf("  %s: %s\n", wski18n.T("API Name"), apiName)
-                        fmt.Printf("  %s: %s\n", wski18n.T("Base path"), basePath)
-                        fmt.Printf("  %s: %s\n", wski18n.T("Path"), path)
-                        fmt.Printf("  %s: %s\n", wski18n.T("Verb"), op)
-                        fmt.Printf("  %s: %s\n", wski18n.T("URL"), baseUrl+path)
+                        infoArr.ActionName = actionName
+                        infoArr.ApiName = apiName
+                        infoArr.BasePath = basePath
+                        infoArr.RelPath = path
+                        infoArr.Verb = op
+                        infoArr.Url = baseUrl+path
+                        infoArr.Flag = flagType
                     }
                 }
             }
         }
     }
+    return infoArr
 }
 
 /*
@@ -1248,9 +1258,11 @@ func printFilteredListApiV2(resultApi *whisk.RetApiV2, apiPath string, apiVerb s
  *
  * NOTE: Large action name and api name value will be truncated by their associated max size parameters.
  */
-func printFilteredListRowV2(resultApi *whisk.RetApiV2, apiPath string, apiVerb string, maxActionNameSize int, maxApiNameSize int) {
+func printFilteredListRowV2(resultApi *whisk.RetApiV2, apiPath string, apiVerb string, maxActionNameSize int, maxApiNameSize int, flagType string) whisk.ApiFilteredRow {
+    var infoArr whisk.ApiFilteredRow
     baseUrl := strings.TrimSuffix(resultApi.BaseUrl, "/")
     apiName := resultApi.Swagger.Info.Title
+    basePath := resultApi.Swagger.BasePath
     if (resultApi.Swagger != nil && resultApi.Swagger.Paths != nil) {
         for path, _ := range resultApi.Swagger.Paths {
             whisk.Debug(whisk.DbgInfo, "printFilteredListRowV2: comparing api relpath: %s\n", path)
@@ -1266,16 +1278,20 @@ func printFilteredListRowV2(resultApi *whisk.RetApiV2, apiPath string, apiVerb s
                         } else {
                             actionName = "/"+opv.XOpenWhisk.Namespace+"/"+opv.XOpenWhisk.ActionName
                         }
-                        fmt.Printf(fmtString,
-                            actionName[0 : min(len(actionName), maxActionNameSize)],
-                            op,
-                            apiName[0 : min(len(apiName), maxApiNameSize)],
-                            baseUrl+path)
+                        infoArr.ActionName =  actionName[0 : min(len(actionName), maxActionNameSize)]
+                        infoArr.Verb = op
+                        infoArr.ApiName = apiName[0 : min(len(apiName), maxApiNameSize)]
+                        infoArr.Url = baseUrl+path
+                        infoArr.RelPath = path
+                        infoArr.BasePath = basePath
+                        infoArr.FmtString = fmtString
+                        infoArr.Flag = flagType
                     }
                 }
             }
         }
     }
+    return infoArr
 }
 
 func getLargestActionNameSizeV2(retApiArray *whisk.RetApiArrayV2, apiPath string, apiVerb string) int {
@@ -1576,6 +1592,7 @@ func init() {
     apiListCmdV2.Flags().IntVarP(&flags.common.skip, "skip", "s", 0, wski18n.T("exclude the first `SKIP` number of actions from the result"))
     apiListCmdV2.Flags().IntVarP(&flags.common.limit, "limit", "l", 30, wski18n.T("only return `LIMIT` number of actions from the collection"))
     apiListCmdV2.Flags().BoolVarP(&flags.common.full, "full", "f", false, wski18n.T("display full description of each API"))
+    apiListCmdV2.Flags().BoolVarP(&flags.api.sortAction, "sort-action", "n", false, wski18n.T("sorts api list by action name first followed by base-path/rel-path/verb"))
     apiCmd.AddCommand(
         apiCreateCmdV2,
         apiGetCmdV2,

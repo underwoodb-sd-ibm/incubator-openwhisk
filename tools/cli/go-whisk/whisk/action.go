@@ -22,6 +22,12 @@ import (
     "errors"
     "net/url"
     "../wski18n"
+    "strings"
+
+
+
+
+
 )
 
 type ActionService struct {
@@ -29,17 +35,18 @@ type ActionService struct {
 }
 
 type Action struct {
-    Namespace   string      `json:"namespace,omitempty"`
     Name        string      `json:"name,omitempty"`
+    Namespace   string      `json:"namespace,omitempty"`
     Version     string      `json:"version,omitempty"`
     Exec        *Exec       `json:"exec,omitempty"`
-    Annotations KeyValueArr `json:"annotations,omitempty"`
     Parameters  KeyValueArr `json:"parameters,omitempty"`
+    Annotations KeyValueArr `json:"annotations,omitempty"`
     Limits      *Limits     `json:"limits,omitempty"`
     Error       string      `json:"error,omitempty"`
     Code        int         `json:"code,omitempty"`
     Publish     *bool       `json:"publish,omitempty"`
 }
+
 
 type Exec struct {
     Kind        string      `json:"kind,omitempty"`
@@ -54,6 +61,29 @@ type ActionListOptions struct {
     Limit       int         `url:"limit"`
     Skip        int         `url:"skip"`
     Docs        bool        `url:"docs,omitempty"`
+}
+//Defines how actions should be sorted
+//Currently sorts, by default, by Alphabetical order
+func(a Action) Compare(s Sortable) bool{
+  as := s.(Action)
+  actionString := strings.ToLower(fmt.Sprintf("%s%s",a.Namespace, a.Name))
+  compareString := strings.ToLower(fmt.Sprintf("%s%s", as.Namespace, as.Name))
+
+  return actionString < compareString
+}
+//Collects parameters to be printed for wsk Action list command
+func(a Action) ListString() string{
+  publishState := wski18n.T("private")
+  var kind string
+
+  for i:= range a.Annotations {
+    if (a.Annotations[i].Key == "exec") {
+      kind = a.Annotations[i].Value.(string)
+      break
+    }
+  }
+
+  return fmt.Sprintf("%-70s %s %s\n", fmt.Sprintf("/%s/%s", a.Namespace, a.Name), publishState, kind)
 }
 
 ////////////////////

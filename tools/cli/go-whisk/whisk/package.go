@@ -22,6 +22,8 @@ import (
     "net/url"
     "errors"
     "../wski18n"
+    "strings"
+
 )
 
 type PackageService struct {
@@ -45,6 +47,7 @@ type Package struct {
     Actions     []Action            `json:"actions,omitempty"`
     Feeds       []Action            `json:"feeds,omitempty"`
 }
+
 func (p *Package) GetName() string {
     return p.Name
 }
@@ -81,6 +84,24 @@ type PackageListOptions struct {
     Skip        int                 `url:"skip"`
     Since       int                 `url:"since,omitempty"`
     Docs        bool                `url:"docs,omitempty"`
+}
+
+func(p Package) Compare(s Sortable) bool{
+  ps := s.(Package)
+  packageString := strings.ToLower(fmt.Sprintf("%s%s",p.Namespace, p.Name))
+  compareString := strings.ToLower(fmt.Sprintf("%s%s", ps.Namespace, ps.Name))
+
+  return packageString < compareString
+}
+
+func(p Package) ListString() string{
+  publishState := wski18n.T("private")
+  
+  if p.Publish != nil && *p.Publish {
+      publishState = wski18n.T("shared")
+  }
+
+ return fmt.Sprintf("%-70s %s\n", fmt.Sprintf("/%s/%s", p.Namespace, p.Name), publishState)
 }
 
 func (s *PackageService) List(options *PackageListOptions) ([]Package, *http.Response, error) {

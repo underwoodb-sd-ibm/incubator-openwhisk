@@ -97,7 +97,6 @@ var flags struct {
         sinceHours      int
         sinceDays       int
         exit            int
-        last            bool
     }
 
     // rule
@@ -119,6 +118,7 @@ var flags struct {
         basepath   string
         apiname    string
         configfile string
+        sortAction bool
         resptype   string
     }
 }

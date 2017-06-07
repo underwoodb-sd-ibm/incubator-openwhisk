@@ -20,6 +20,8 @@ import (
     "net/http"
     "errors"
     "../wski18n"
+    "strings"
+    "fmt"
 )
 
 type ApiService struct {
@@ -183,6 +185,28 @@ type ApiSwaggerOpXOpenWhiskV2 struct {
     ApiUrl          string    `json:"url"`
 }
 
+type ApiFilteredList struct {
+    ActionName      string
+    ApiName         string
+    BasePath        string
+    RelPath         string
+    Verb            string
+    Url             string
+    Flag            string
+}
+
+type ApiFilteredRow struct {
+  ActionName      string
+  ApiName         string
+  BasePath        string
+  RelPath         string
+  Verb            string
+  Url             string
+  FmtString       string
+  Flag            string
+
+}
+
 var ApiVerbs map[string]bool = map[string]bool {
     "GET": true,
     "PUT": true,
@@ -202,8 +226,57 @@ const (
 // Api Methods //
 ////////////////////
 
+func(api ApiFilteredList) Compare(s Sortable) bool{
+  as := s.(ApiFilteredList)
+  var apiString string
+  var compareString string
+
+  switch api.Flag {
+    case "a":
+        apiString = strings.ToLower(fmt.Sprintf("%s%s%s%s", api.ActionName, api.BasePath, api.RelPath, api.Verb))
+        compareString = strings.ToLower(fmt.Sprintf("%s%s%s%s", as.ActionName , as.BasePath, as.RelPath, as.Verb))
+    default:
+      fmt.Println("Default Sort Working")
+      apiString = strings.ToLower(fmt.Sprintf("%s%s%s",api.BasePath, api.RelPath, api.Verb))
+      compareString = strings.ToLower(fmt.Sprintf("%s%s%s", as.BasePath, as.RelPath, as.Verb))
+  }
+
+  return apiString < compareString
+}
+
+func(api ApiFilteredList) ListString() string {
+  return fmt.Sprintf("%s %s %s %s %s %s",
+  fmt.Sprintf("%s: %s\n", wski18n.T("Action"), api.ActionName),
+  fmt.Sprintf("  %s: %s\n", wski18n.T("API Name"), api.ApiName),
+  fmt.Sprintf("  %s: %s\n", wski18n.T("Base path"), api.BasePath),
+  fmt.Sprintf("  %s: %s\n", wski18n.T("Path"), api.RelPath),
+  fmt.Sprintf("  %s: %s\n", wski18n.T("Verb"), api.Verb),
+  fmt.Sprintf("  %s: %s\n", wski18n.T("URL"), api.Url))
+}
+
+func(api ApiFilteredRow) Compare(s Sortable) bool{
+  as := s.(ApiFilteredRow)
+  var apiString string
+  var compareString string
+
+  switch api.Flag {
+    case "a":
+      apiString = strings.ToLower(fmt.Sprintf("%s%s%s%s", api.ActionName, api.BasePath, api.RelPath, api.Verb))
+      compareString = strings.ToLower(fmt.Sprintf("%s%s%s%s", as.ActionName , as.BasePath, as.RelPath, as.Verb))
+    default:
+      apiString = strings.ToLower(fmt.Sprintf("%s%s%s",api.BasePath, api.RelPath, api.Verb))
+      compareString = strings.ToLower(fmt.Sprintf("%s%s%s", as.BasePath, as.RelPath, as.Verb))
+  }
+
+  return apiString < compareString
+}
+
+func(api ApiFilteredRow) ListString() string {
+  return fmt.Sprintf(api.FmtString, api.ActionName, api.Verb, api.ApiName, api.Url)
+}
+
 func (s *ApiService) List(apiListOptions *ApiListRequestOptions) (*ApiListResponse, *http.Response, error) {
-    route := "web/whisk.system/routemgmt/getApi.http"
+    route := "experimental/web/whisk.system/routemgmt/getApi.json"
     Debug(DbgInfo, "Api GET/list route: %s\n", route)
 
     routeUrl, err := addRouteOptions(route, apiListOptions)
@@ -238,7 +311,7 @@ func (s *ApiService) List(apiListOptions *ApiListRequestOptions) (*ApiListRespon
 }
 
 func (s *ApiService) Insert(api *ApiCreateRequest, options *ApiCreateRequestOptions, overwrite bool) (*ApiCreateResponse, *http.Response, error) {
-    route := "web/whisk.system/routemgmt/createApi.http"
+    route := "experimental/web/whisk.system/routemgmt/createApi.json"
     Debug(DbgInfo, "Api PUT route: %s\n", route)
 
     routeUrl, err := addRouteOptions(route, options)
@@ -273,7 +346,7 @@ func (s *ApiService) Insert(api *ApiCreateRequest, options *ApiCreateRequestOpti
 }
 
 func (s *ApiService) Get(api *ApiGetRequest, options *ApiGetRequestOptions) (*ApiGetResponse, *http.Response, error) {
-    route := "web/whisk.system/routemgmt/getApi.http"
+    route := "experimental/web/whisk.system/routemgmt/getApi.json"
     Debug(DbgInfo, "Api GET route: %s\n", route)
 
     routeUrl, err := addRouteOptions(route, options)
@@ -308,7 +381,7 @@ func (s *ApiService) Get(api *ApiGetRequest, options *ApiGetRequestOptions) (*Ap
 }
 
 func (s *ApiService) Delete(api *ApiDeleteRequest, options *ApiDeleteRequestOptions) (*http.Response, error) {
-    route := "web/whisk.system/routemgmt/deleteApi.http"
+    route := "experimental/web/whisk.system/routemgmt/deleteApi.json"
     Debug(DbgInfo, "Api DELETE route: %s\n", route)
 
     routeUrl, err := addRouteOptions(route, options)

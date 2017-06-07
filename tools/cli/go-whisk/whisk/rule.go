@@ -46,6 +46,19 @@ type RuleListOptions struct {
     Docs        bool    `url:"docs,omitempty"`
 }
 
+func(r Rule) Compare(s Sortable) bool{
+  rs := s.(Rule)
+  ruleString := strings.ToLower(fmt.Sprintf("%s%s",r.Namespace, r.Name))
+  compareString := strings.ToLower(fmt.Sprintf("%s%s", rs.Namespace,rs.Name))
+
+  return ruleString < compareString
+}
+func(r Rule) ListString() string{
+    publishState := wski18n.T("private")
+
+    return fmt.Sprintf("%-70s %s\n", fmt.Sprintf("/%s/%s", r.Namespace, r.Name), publishState)
+}
+
 func (s *RuleService) List(options *RuleListOptions) ([]Rule, *http.Response, error) {
     route := "rules"
     routeUrl, err := addRouteOptions(route, options)
