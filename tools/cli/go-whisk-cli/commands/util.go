@@ -22,7 +22,6 @@ import (
     "fmt"
     "strings"
 
-
     "../../go-whisk/whisk"
     "../wski18n"
 
@@ -287,7 +286,11 @@ func printList(collection interface{}) {
       sort.Sort(SortCmds(commandToSort))
       printCommandsList(commandToSort,true)
     case []whisk.Namespace:
-        printNamespaceList(collection)
+      for i := range collection {
+        commandToSort = append(commandToSort, collection[i])
+      }
+      sort.Sort(SortCmds(commandToSort))
+      printCommandsList(commandToSort,true)
     case []whisk.Activation:
         printActivationList(collection)
     case []whisk.ApiFilteredList:

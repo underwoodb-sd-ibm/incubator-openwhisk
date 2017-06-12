@@ -46,17 +46,32 @@ type RuleListOptions struct {
     Docs        bool    `url:"docs,omitempty"`
 }
 
-func(r Rule) Compare(s Sortable) bool{
-  rs := s.(Rule)
-  ruleString := strings.ToLower(fmt.Sprintf("%s%s",r.Namespace, r.Name))
-  compareString := strings.ToLower(fmt.Sprintf("%s%s", rs.Namespace,rs.Name))
+/*
+ *  Compare(s) compares Rule r to Sortable s for the purpose of sorting.
+ *  params: Sortable type s that is also of type Rule (REQUIRED)
+ *  ***Method of type Sortable***
+ *  ***By default, sorts Alphabetically***
+ */
+func(rule Rule) Compare(sortable Sortable) bool{
+  // convert s back to proper type
+  ruleToCompare := sortable.(Rule)
+  ruleString := strings.ToLower(fmt.Sprintf("%s%s",rule.Namespace, rule.Name))
+  compareString := strings.ToLower(fmt.Sprintf("%s%s", ruleToCompare.Namespace,
+      ruleToCompare.Name))
 
   return ruleString < compareString
 }
-func(r Rule) ListString() string{
+
+/*
+ *  ListString() returns a compound string of required parameters for printing
+ *    from CLI command `wsk rule list`.
+ *  ***Method of type Sortable***
+ */
+func(rule Rule) ListString() string{
     publishState := wski18n.T("private")
 
-    return fmt.Sprintf("%-70s %s\n", fmt.Sprintf("/%s/%s", r.Namespace, r.Name), publishState)
+    return fmt.Sprintf("%-70s %s\n", fmt.Sprintf("/%s/%s", rule.Namespace,
+        rule.Name), publishState)
 }
 
 func (s *RuleService) List(options *RuleListOptions) ([]Rule, *http.Response, error) {

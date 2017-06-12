@@ -226,51 +226,86 @@ const (
 // Api Methods //
 ////////////////////
 
-func(api ApiFilteredList) Compare(s Sortable) bool{
-  as := s.(ApiFilteredList)
+/*
+ *  Compare(s) compares ApiFilteredList api to Sortable s for the purpose of
+ *    sorting.
+ *  params: Sortable type s that is also of type ApiFilteredList (REQUIRED)
+ *  ***Method of type Sortable***
+ *  ***By default, sorts Alphabetically***
+ */
+func(api ApiFilteredList) Compare(sortable Sortable) bool{
+  // convert s back to proper type
+  apiToCompare := sortable.(ApiFilteredList)
   var apiString string
   var compareString string
 
+  // Check for flag to build proper comparison strings
   switch api.Flag {
-    case "a":
-        apiString = strings.ToLower(fmt.Sprintf("%s%s%s%s", api.ActionName, api.BasePath, api.RelPath, api.Verb))
-        compareString = strings.ToLower(fmt.Sprintf("%s%s%s%s", as.ActionName , as.BasePath, as.RelPath, as.Verb))
-    default:
-      fmt.Println("Default Sort Working")
-      apiString = strings.ToLower(fmt.Sprintf("%s%s%s",api.BasePath, api.RelPath, api.Verb))
-      compareString = strings.ToLower(fmt.Sprintf("%s%s%s", as.BasePath, as.RelPath, as.Verb))
+  case "a":
+      apiString = strings.ToLower(fmt.Sprintf("%s%s%s%s", api.ActionName,
+          api.BasePath, api.RelPath, api.Verb))
+      compareString = strings.ToLower(fmt.Sprintf("%s%s%s%s", apiToCompare.ActionName,
+          apiToCompare.BasePath, apiToCompare.RelPath, apiToCompare.Verb))
+  default:
+      apiString = strings.ToLower(fmt.Sprintf("%s%s%s",api.BasePath, api.RelPath,
+          api.Verb))
+      compareString = strings.ToLower(fmt.Sprintf("%s%s%s", apiToCompare.BasePath,
+          apiToCompare.RelPath, apiToCompare.Verb))
   }
 
   return apiString < compareString
 }
 
+/*
+ *  ListString() returns a compound string of required parameters for printing
+ *    from CLI command `wsk api list` or `wsk api-experimental list`.
+ *  ***Method of type Sortable***
+ */
 func(api ApiFilteredList) ListString() string {
-  return fmt.Sprintf("%s %s %s %s %s %s",
-  fmt.Sprintf("%s: %s\n", wski18n.T("Action"), api.ActionName),
-  fmt.Sprintf("  %s: %s\n", wski18n.T("API Name"), api.ApiName),
-  fmt.Sprintf("  %s: %s\n", wski18n.T("Base path"), api.BasePath),
-  fmt.Sprintf("  %s: %s\n", wski18n.T("Path"), api.RelPath),
-  fmt.Sprintf("  %s: %s\n", wski18n.T("Verb"), api.Verb),
-  fmt.Sprintf("  %s: %s\n", wski18n.T("URL"), api.Url))
+    return fmt.Sprintf("%s %s %s %s %s %s",
+    fmt.Sprintf("%s: %s\n", wski18n.T("Action"), api.ActionName),
+    fmt.Sprintf("  %s: %s\n", wski18n.T("API Name"), api.ApiName),
+    fmt.Sprintf("  %s: %s\n", wski18n.T("Base path"), api.BasePath),
+    fmt.Sprintf("  %s: %s\n", wski18n.T("Path"), api.RelPath),
+    fmt.Sprintf("  %s: %s\n", wski18n.T("Verb"), api.Verb),
+    fmt.Sprintf("  %s: %s\n", wski18n.T("URL"), api.Url))
 }
 
-func(api ApiFilteredRow) Compare(s Sortable) bool{
-  as := s.(ApiFilteredRow)
+/*
+ *  Compare(s) compares ApiFilteredRow api to Sortable s for the purpose of
+ *    sorting.
+ *  params: Sortable type s that is also of type ApiFilteredRow (REQUIRED)
+ *  ***Method of type Sortable***
+ *  ***By default, sorts Alphabetically***
+ */
+func(api ApiFilteredRow) Compare(sortable Sortable) bool{
+  // convert s back to proper type
+  apiToCompare := sortable.(ApiFilteredRow)
   var apiString string
   var compareString string
 
+  // Check for flag to build proper comparison strings
   switch api.Flag {
-    case "a":
-      apiString = strings.ToLower(fmt.Sprintf("%s%s%s%s", api.ActionName, api.BasePath, api.RelPath, api.Verb))
-      compareString = strings.ToLower(fmt.Sprintf("%s%s%s%s", as.ActionName , as.BasePath, as.RelPath, as.Verb))
-    default:
-      apiString = strings.ToLower(fmt.Sprintf("%s%s%s",api.BasePath, api.RelPath, api.Verb))
-      compareString = strings.ToLower(fmt.Sprintf("%s%s%s", as.BasePath, as.RelPath, as.Verb))
+  case "a":
+      apiString = strings.ToLower(fmt.Sprintf("%s%s%s%s", api.ActionName, api.BasePath,
+          api.RelPath, api.Verb))
+      compareString = strings.ToLower(fmt.Sprintf("%s%s%s%s", apiToCompare.ActionName,
+          apiToCompare.BasePath, apiToCompare.RelPath, apiToCompare.Verb))
+  default:
+      apiString = strings.ToLower(fmt.Sprintf("%s%s%s",api.BasePath, api.RelPath,
+          api.Verb))
+      compareString = strings.ToLower(fmt.Sprintf("%s%s%s", apiToCompare.BasePath,
+          apiToCompare.RelPath, apiToCompare.Verb))
   }
 
   return apiString < compareString
 }
 
+/*
+ *  ListString() returns a compound string of required parameters for printing
+ *    from CLI command `wsk api list -f` or `wsk api-experimental list -f`.
+ *  ***Method of type Sortable***
+ */
 func(api ApiFilteredRow) ListString() string {
   return fmt.Sprintf(api.FmtString, api.ActionName, api.Verb, api.ApiName, api.Url)
 }

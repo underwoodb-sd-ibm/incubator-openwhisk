@@ -24,7 +24,6 @@ import (
     "io"
     "strings"
 
-
     "../../go-whisk/whisk"
     "../wski18n"
 
@@ -311,7 +310,7 @@ var actionListCmd = &cobra.Command{
         if actions, _, err = client.Actions.List(qualifiedName.entityName, options); err != nil {
             return actionListError(qualifiedName.entityName, options, err)
         }
-        
+
         printList(actions)
 
         return nil
