@@ -73,7 +73,7 @@ var sdkInstallCmd = &cobra.Command{
         case "ios":
             err = iOSInstall()
         case "bashauto":
-            err = WskCmd.GenBashCompletionFile(BASH_AUTOCOMPLETE_FILENAME)
+            err = WskCmd.GenBashCompletion(os.Stdout)
             if (err != nil) {
                 whisk.Debug(whisk.DbgError, "GenBashCompletionFile('%s`) error: \n", BASH_AUTOCOMPLETE_FILENAME, err)
                 errStr := wski18n.T("Unable to generate '{{.name}}': {{.err}}",
