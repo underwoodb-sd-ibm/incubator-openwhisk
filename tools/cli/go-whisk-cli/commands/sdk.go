@@ -22,6 +22,7 @@ import (
     "io"
     "os"
     "strings"
+    "path/filepath"
 
     "github.com/spf13/cobra"
 
@@ -81,6 +82,13 @@ var sdkInstallCmd = &cobra.Command{
                 werr := whisk.MakeWskError(errors.New(errStr), whisk.EXITCODE_ERR_GENERAL, whisk.DISPLAY_MSG, whisk.NO_DISPLAY_USAGE)
                 return werr
             }
+			whisk.Debug(whisk.DbgInfo, "looking for .bashrc\n")
+            match, err := Find(".bashrc", "/home")
+            if err != nil {
+            	whisk.Debug(whisk.DbgError, "Could not find .bashrc: %s\n", err)
+               } else {
+                	whisk.Debug(whisk.DbgInfo, "Found bashrc: %s\n", match)
+               }
             fmt.Printf(
                 wski18n.T("bash_completion_msg",
                     map[string]interface{}{"name": BASH_AUTOCOMPLETE_FILENAME}))
@@ -96,6 +104,24 @@ var sdkInstallCmd = &cobra.Command{
         }
         return nil
     },
+}
+
+func Find(file string, start string) (found string, err error) {
+	whisk.Debug(whisk.DbgInfo, "Looking through %s for %s\n", start, file)
+	err = filepath.Walk(start,
+		filepath.WalkFunc(func(path string, fi os.FileInfo, errIn error) error {
+			whisk.Debug(whisk.DbgInfo, "Path: %s\n", path)
+			if fi.Name() == file {
+				found = path
+				whisk.Debug(whisk.DbgInfo, "Found file at: %s\n", found)
+				return io.EOF
+			}
+			return nil
+		}))
+	if err == io.EOF {
+		err = nil
+	}
+	return found, err
 }
 
 func dockerInstall() error {
