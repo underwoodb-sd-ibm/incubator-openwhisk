@@ -1278,11 +1278,7 @@ class ApiGwTests
         }
     }
 
-<<<<<<< HEAD
     it should "list api alphabetically by Base/Rel/Verb" in {
-=======
-    it should "list api alphabetically by Base/Rel/Verb and Action name" in {
->>>>>>> Added alphabetized sorting
         val actionName = "actionApiListTest"
         val baseName = "/BaseTestPathApiList"
 
